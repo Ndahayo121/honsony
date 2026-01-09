@@ -1,0 +1,278 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard </title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+
+<header class="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+  <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+    <div>
+      <div class="text-xl font-extrabold tracking-tight">Admin Dashboard </div>
+      
+      
+      <div class="text-sm text-slate-400">MyNETHUB controls</div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="/" class="text-sm text-slate-300 hover:text-white">Go to Upload</a>
+      <button id="logoutBtn"
+        class="rounded-xl border border-slate-700 px-3 py-2 text-sm hover:bg-slate-900">
+        Logout
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-4 py-6 space-y-6">
+
+  <!-- Status -->
+  <div id="status" class="text-sm text-slate-300"></div>
+
+  <!-- Storage -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <div class="font-semibold">Storage</div>
+      <button id="refreshBtn" class="rounded-xl border border-slate-700 px-3 py-2 text-sm hover:bg-slate-900">
+        Refresh
+      </button>
+    </div>
+    <div class="grid gap-3 md:grid-cols-3">
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+        <div class="text-xs text-slate-400">Total size</div>
+        <div id="totalSize" class="mt-1 text-lg font-bold">—</div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+        <div class="text-xs text-slate-400">Videos</div>
+        <div id="count" class="mt-1 text-lg font-bold">—</div>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+        <div class="text-xs text-slate-400">Thumbnails</div>
+        <div class="mt-1 text-sm text-slate-300">Rebuild from HLS playlists</div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 pt-2">
+      <button id="rebuildBtn"
+        class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-500 disabled:opacity-60">
+        Rebuild thumbnails (all)
+      </button>
+      <input id="thumbSeconds" type="number" value="1" min="0" step="0.5"
+        class="w-28 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+        title="Thumbnail time (seconds)" />
+      <span class="text-xs text-slate-400">seconds</span>
+    </div>
+  </section>
+
+  <!-- Videos table -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+    <div class="flex items-center justify-between gap-3">
+      <div class="font-semibold">Videos</div>
+      <input id="search" placeholder="Search title…"
+        class="w-64 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+    </div>
+
+    <div class="overflow-auto rounded-xl border border-slate-800">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-950/70 text-slate-300">
+          <tr>
+            <th class="p-3 text-left">Title</th>
+            <th class="p-3 text-left">Size</th>
+            <th class="p-3 text-left">Created</th>
+            <th class="p-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-slate-800"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Change creds -->
+  <section class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+    <div class="font-semibold">Change Admin Credentials</div>
+    <div class="text-xs text-slate-400">
+      Requires current username/password/key2. After update, you will be logged out for safety.
+    </div>
+
+    <div class="grid gap-3 md:grid-cols-3">
+      <input id="curU" placeholder="Current username"
+        class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+      <input id="curP" type="password" placeholder="Current password"
+        class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+      <input id="curK" type="password" placeholder="Current key2"
+        class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+    </div>
+
+    <div class="grid gap-3 md:grid-cols-3">
+      <input id="newU" placeholder="New username (optional)"
+        class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+      <input id="newP" type="password" placeholder="New password (optional)"
+        class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+      <input id="newK" type="password" placeholder="New key2 (optional)"
+        class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm" />
+    </div>
+
+    <button id="changeBtn"
+      class="rounded-xl border border-slate-700 px-4 py-2 text-sm hover:bg-slate-900">
+      Update credentials
+    </button>
+
+    <div id="credMsg" class="text-sm text-red-300"></div>
+  </section>
+
+</main>
+
+<script>
+  const statusEl = document.getElementById("status");
+  const totalSizeEl = document.getElementById("totalSize");
+  const countEl = document.getElementById("count");
+  const rowsEl = document.getElementById("rows");
+  const refreshBtn = document.getElementById("refreshBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const rebuildBtn = document.getElementById("rebuildBtn");
+  const thumbSecondsEl = document.getElementById("thumbSeconds");
+  const searchEl = document.getElementById("search");
+
+  const changeBtn = document.getElementById("changeBtn");
+  const credMsg = document.getElementById("credMsg");
+
+  let all = [];
+
+  function esc(s){ return (s||"").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;", '"':"&quot;","'":"&#039;"
+  }[m])); }
+
+  async function api(url, opts){
+    const r = await fetch(url, opts);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ("Request failed: " + r.status));
+    return data;
+  }
+
+  function render(list){
+    rowsEl.innerHTML = list.map(v => `
+      <tr class="bg-slate-950/20">
+        <td class="p-3">
+          <div class="font-semibold">${esc(v.title || "Untitled")}</div>
+          <div class="text-xs text-slate-500">${esc(v.id)}</div>
+        </td>
+        <td class="p-3 text-slate-300">${esc(v.sizeHuman || "")}</td>
+        <td class="p-3 text-slate-400">${v.createdAt ? esc(new Date(v.createdAt).toLocaleString()) : ""}</td>
+        <td class="p-3 text-right">
+          <button class="rounded-lg border border-slate-700 px-3 py-1 hover:bg-slate-900"
+            onclick="renameVideo('${esc(v.id)}')">Rename</button>
+          <button class="ml-2 rounded-lg border border-red-700 px-3 py-1 hover:bg-red-950/50 text-red-200"
+            onclick="deleteVideo('${esc(v.id)}')">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function load(){
+    statusEl.textContent = "Loading…";
+    const stats = await api("/api/admin/stats");
+    totalSizeEl.textContent = stats.totalHuman;
+    countEl.textContent = stats.count;
+
+    all = await api("/api/admin/videos");
+    render(all);
+    statusEl.textContent = "";
+  }
+
+  window.renameVideo = async (id) => {
+    const title = prompt("New title:");
+    if (!title) return;
+    try {
+      statusEl.textContent = "Renaming…";
+      await api(`/api/admin/video/${encodeURIComponent(id)}/rename`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title })
+      });
+      await load();
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    }
+  }
+
+  window.deleteVideo = async (id) => {
+    if (!confirm("Delete this video forever? This removes folder + DB record.")) return;
+    try {
+      statusEl.textContent = "Deleting…";
+      await api(`/api/admin/video/${encodeURIComponent(id)}/delete`, { method: "POST" });
+      await load();
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    }
+  }
+
+  rebuildBtn.addEventListener("click", async () => {
+    try {
+      rebuildBtn.disabled = true;
+      statusEl.textContent = "Rebuilding thumbnails…";
+      const seconds = Number(thumbSecondsEl.value || 1);
+      const out = await api("/api/admin/rebuild-thumbs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seconds })
+      });
+      statusEl.textContent = `Done ✅ rebuilt: ${out.rebuilt} failed: ${out.failed}`;
+      await load();
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    } finally {
+      rebuildBtn.disabled = false;
+    }
+  });
+
+  refreshBtn.addEventListener("click", load);
+
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await api("/api/admin/logout", { method: "POST" });
+      location.href = "/admin/login.html";
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    }
+  });
+
+  searchEl.addEventListener("input", () => {
+    const q = (searchEl.value || "").toLowerCase().trim();
+    if (!q) return render(all);
+    render(all.filter(v => (v.title || "").toLowerCase().includes(q)));
+  });
+
+  changeBtn.addEventListener("click", async () => {
+    credMsg.textContent = "";
+    try {
+      const payload = {
+        currentUsername: document.getElementById("curU").value.trim(),
+        currentPassword: document.getElementById("curP").value,
+        currentKey2: document.getElementById("curK").value,
+        newUsername: document.getElementById("newU").value.trim() || undefined,
+        newPassword: document.getElementById("newP").value || undefined,
+        newKey2: document.getElementById("newK").value || undefined,
+      };
+      statusEl.textContent = "Updating credentials…";
+      const out = await api("/api/admin/change-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      statusEl.textContent = out.message || "Updated";
+      location.href = "/admin/login.html";
+    } catch (e) {
+      credMsg.textContent = e.message;
+      statusEl.textContent = "";
+    }
+  });
+
+  load();
+</script>
+
+</body>
+</html>
