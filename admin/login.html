@@ -1,0 +1,103 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+  <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+
+    <!-- Centered Title -->
+    <h1 class="text-xl font-extrabold text-center tracking-wide">
+      Admin Login
+    </h1>
+    <p class="text-sm text-slate-400 mt-1 text-center">
+       <!-- Authorized devices only -->
+    </p>
+
+    <form id="f" class="mt-6 space-y-4">
+
+      <!-- Username -->
+      <input id="u" autocomplete="username"
+        class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+        placeholder="Username" />
+
+      <!-- Password -->
+      <div class="relative">
+        <input id="p" type="password" autocomplete="current-password"
+          class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 pr-16 text-sm"
+          placeholder="Password" />
+        <button type="button"
+          onclick="toggle('p', this)"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white">
+          Show
+        </button>
+      </div>
+
+      <!-- Secret Key -->
+      <div class="relative">
+        <input id="k" type="password" autocomplete="one-time-code"
+          class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 pr-16 text-sm"
+          placeholder="Secret Key" />
+        <button type="button"
+          onclick="toggle('k', this)"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white">
+          Show
+        </button>
+      </div>
+
+      <!-- Button -->
+      <button id="b"
+        class="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-500 disabled:opacity-60">
+        Sign in
+      </button>
+
+      <div id="msg" class="text-sm text-red-300"></div>
+    </form>
+  </div>
+
+  <script>
+    const f = document.getElementById("f");
+    const msg = document.getElementById("msg");
+    const b = document.getElementById("b");
+
+    function toggle(id, btn) {
+      const input = document.getElementById(id);
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.textContent = show ? "Hide" : "Show";
+    }
+
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "";
+      b.disabled = true;
+
+      const username = document.getElementById("u").value.trim();
+      const password = document.getElementById("p").value;
+      const key2 = document.getElementById("k").value;
+
+      try {
+        const res = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password, key2 })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Login failed");
+
+        location.href = "/";
+      } catch (err) {
+        msg.textContent = err.message;
+      } finally {
+        b.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
